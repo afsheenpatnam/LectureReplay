@@ -43,9 +43,9 @@ export default function UploadPage() {
       <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
       <div className="absolute -bottom-24 -right-16 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
 
-      <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 p-8 border border-slate-800 w-full max-w-md mx-auto relative">
-        <h1 className="text-2xl font-bold mb-1 text-blue-400">📚 LectureReplay</h1>
-        <p className="text-slate-500 text-sm mb-6">Topic timeline, quiz, and flashcards in seconds.</p>
+      <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 p-9 border border-slate-800 w-full max-w-lg mx-auto relative">
+        <h1 className="text-3xl font-bold mb-1 text-blue-400">📚 LectureReplay</h1>
+        <p className="text-slate-500 text-base mb-6">Topic timeline, quiz, and flashcards in seconds.</p>
 
         <div className="flex gap-2 mb-6">
           {[
