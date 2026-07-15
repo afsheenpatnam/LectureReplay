@@ -3,7 +3,23 @@
 @tailwind utilities;
 
 body {
-  @apply text-slate-200;
+  @apply text-slate-200 font-sans antialiased;
   background: radial-gradient(circle at 20% 20%, #0b1a3a 0%, #020617 55%), #020617;
   min-height: 100vh;
 }
+
+h1, h2, h3 {
+  @apply font-display;
+}
+
+::selection {
+  @apply bg-blue-500/30 text-white;
+}
+
+* {
+  scrollbar-color: #1e293b #020617;
+}
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: #020617; }
+::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #334155; }

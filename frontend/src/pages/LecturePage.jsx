@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { getLecture } from '../api';
+import { getLecture, askAboutLecture } from '../api';
 
 const STATUS_LABEL = {
   uploaded: 'Queued…',
@@ -22,7 +22,7 @@ function Timeline({ chapters }) {
   return (
     <div className="space-y-3">
       {chapters.map((c, i) => (
-        <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4">
+        <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-800 hover:shadow-md hover:shadow-blue-950/40 transition-all">
           <div className="flex items-center justify-between mb-1">
             <span className="font-semibold text-blue-400">{c.headline}</span>
             {c.start != null && c.end != null && (
@@ -82,7 +82,7 @@ function RevisionNotes({ notes, chapters }) {
       <TopicBreakdown chapters={chapters} />
       <div className="space-y-6">
         {notes.map((section, i) => (
-          <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4">
+          <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-800 hover:shadow-md hover:shadow-blue-950/40 transition-all">
             <h3 className="font-semibold text-blue-400 mb-2">📌 {section.heading}</h3>
             <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
               {section.bullets.map((b, bi) => (
@@ -110,7 +110,7 @@ function Quiz({ quiz }) {
   return (
     <div className="space-y-6">
       {quiz.map((q, i) => (
-        <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4">
+        <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-900 transition-all">
           <p className="font-semibold mb-3 text-slate-200">
             {i + 1}. {q.question}
           </p>
@@ -150,6 +150,66 @@ function Quiz({ quiz }) {
           🎉 Score: {score} / {quiz.length}
         </p>
       )}
+    </div>
+  );
+}
+
+function AskAI({ lectureId }) {
+  const [question, setQuestion] = useState('');
+  const [history, setHistory] = useState([]);
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState('');
+
+  const handleAsk = async (e) => {
+    e.preventDefault();
+    if (!question.trim() || asking) return;
+    const q = question.trim();
+    setQuestion('');
+    setError('');
+    setAsking(true);
+    try {
+      const { answer } = await askAboutLecture(lectureId, q);
+      setHistory((h) => [...h, { question: q, answer }]);
+    } catch (err) {
+      setError(err.response?.data?.error || 'Something went wrong asking that.');
+    } finally {
+      setAsking(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      {history.length === 0 && (
+        <p className="text-sm text-slate-500 italic">
+          Ask anything about this lecture — the AI answers using only what was actually said.
+        </p>
+      )}
+      <div className="space-y-4">
+        {history.map((h, i) => (
+          <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4">
+            <p className="text-sm font-semibold text-cyan-400 mb-2">🙋 {h.question}</p>
+            <p className="text-sm text-slate-300 leading-relaxed">{h.answer}</p>
+          </div>
+        ))}
+      </div>
+      {asking && <p className="text-sm text-slate-500">🤖 Thinking…</p>}
+      {error && <p className="text-sm text-rose-400">{error}</p>}
+      <form onSubmit={handleAsk} className="flex gap-2">
+        <input
+          type="text"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+          placeholder="e.g. What's the difference between a mutex and a semaphore?"
+          className="flex-1 rounded-xl bg-slate-800/60 border border-slate-700 px-4 py-3 text-sm text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+        <button
+          type="submit"
+          disabled={asking || !question.trim()}
+          className="rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 px-5 py-3 text-sm font-semibold text-white shadow-md shadow-blue-900/50 hover:shadow-lg transition disabled:opacity-40"
+        >
+          Ask
+        </button>
+      </form>
     </div>
   );
 }
@@ -236,6 +296,7 @@ export default function LecturePage() {
           ['revision', '📖 Revision Notes'],
           ['quiz', '🧠 Quiz'],
           ['flashcards', '🗂️ Flashcards'],
+          ['ask', '🤖 Ask AI'],
         ].map(([key, label]) => (
           <button
             key={key}
@@ -258,6 +319,7 @@ export default function LecturePage() {
       )}
       {tab === 'quiz' && <Quiz quiz={lecture.quiz} />}
       {tab === 'flashcards' && <Flashcards flashcards={lecture.flashcards} />}
+      {tab === 'ask' && <AskAI lectureId={lecture._id} />}
     </div>
   );
 }

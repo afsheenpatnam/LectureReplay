@@ -5,7 +5,7 @@ const fs = require('fs');
 const { PDFParse } = require('pdf-parse');
 const Lecture = require('../models/Lecture');
 const { transcribeWithChapters } = require('../services/assemblyai');
-const { generateQuizAndFlashcards, generateFromNotes } = require('../services/groq');
+const { generateQuizAndFlashcards, generateFromNotes, askQuestion } = require('../services/groq');
 
 const router = express.Router();
 
@@ -86,8 +86,26 @@ router.post('/upload-notes', upload.single('notesFile'), async (req, res) => {
 });
 
 router.get('/', async (req, res) => {
-  const lectures = await Lecture.find().sort({ createdAt: -1 }).select('title status createdAt');
+  const lectures = await Lecture.find().sort({ createdAt: -1 }).select('title status sourceType createdAt');
   res.json(lectures);
+});
+
+router.post('/:id/ask', async (req, res) => {
+  const { question } = req.body;
+  if (!question || !question.trim()) {
+    return res.status(400).json({ error: 'Question is required' });
+  }
+
+  const lecture = await Lecture.findById(req.params.id);
+  if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
+  if (!lecture.transcript) return res.status(400).json({ error: 'This lecture has no content to ask about yet' });
+
+  try {
+    const answer = await askQuestion(lecture.transcript, question);
+    res.json({ answer });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 router.get('/:id', async (req, res) => {

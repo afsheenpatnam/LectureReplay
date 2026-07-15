@@ -1,6 +1,46 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { uploadLecture, uploadNotes } from '../api';
+import { useEffect, useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { uploadLecture, uploadNotes, listLectures } from '../api';
+
+const STATUS_DOT = {
+  ready: 'bg-emerald-500',
+  failed: 'bg-rose-500',
+};
+
+function RecentLectures() {
+  const [lectures, setLectures] = useState(null);
+
+  useEffect(() => {
+    listLectures()
+      .then((data) => setLectures(data.slice(0, 5)))
+      .catch(() => setLectures([]));
+  }, []);
+
+  if (!lectures?.length) return null;
+
+  return (
+    <div className="bg-slate-900 rounded-2xl shadow-xl shadow-black/40 p-6 border border-slate-800 w-full max-w-lg mx-auto mt-6 relative">
+      <h2 className="text-sm font-semibold text-slate-400 mb-3">🕘 Recent lectures</h2>
+      <div className="space-y-2">
+        {lectures.map((l) => (
+          <Link
+            key={l._id}
+            to={`/lecture/${l._id}`}
+            className="flex items-center justify-between rounded-xl px-3 py-2 text-sm hover:bg-slate-800/60 transition group"
+          >
+            <span className="text-slate-300 truncate group-hover:text-blue-300 transition">
+              {l.sourceType === 'notes' ? '📝' : '🎙️'} {l.title}
+            </span>
+            <span
+              className={`w-2 h-2 rounded-full shrink-0 ml-2 ${STATUS_DOT[l.status] || 'bg-amber-500'}`}
+              title={l.status}
+            />
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export default function UploadPage() {
   const [mode, setMode] = useState('audio');
@@ -39,7 +79,7 @@ export default function UploadPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-6 py-12 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center px-6 py-12 relative overflow-hidden">
       <div className="absolute -top-24 -left-24 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl" />
       <div className="absolute -bottom-24 -right-16 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl" />
 
@@ -132,6 +172,8 @@ export default function UploadPage() {
           </button>
         </form>
       </div>
+
+      <RecentLectures />
     </div>
   );
 }

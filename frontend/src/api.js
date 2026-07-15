@@ -22,4 +22,7 @@ export const getLecture = (id) => api.get(`/lectures/${id}`).then((res) => res.d
 
 export const listLectures = () => api.get('/lectures').then((res) => res.data);
 
+export const askAboutLecture = (id, question) =>
+  api.post(`/lectures/${id}/ask`, { question }).then((res) => res.data);
+
 export default api;

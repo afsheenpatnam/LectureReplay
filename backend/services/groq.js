@@ -84,4 +84,31 @@ Notes:
   };
 }
 
-module.exports = { generateQuizAndFlashcards, generateFromNotes };
+async function askQuestion(transcript, question) {
+  const prompt = `You are a helpful tutor answering a student's question about their lecture.
+Answer ONLY using facts from the transcript below. If the transcript doesn't cover the
+question, say so honestly instead of making something up. Keep the answer concise (2-5 sentences).
+
+Transcript:
+"""${truncate(transcript)}"""
+
+Student's question: ${question}`;
+
+  const res = await axios.post(
+    `${BASE_URL}/chat/completions`,
+    {
+      model: 'llama-3.3-70b-versatile',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.3,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+    }
+  );
+  return res.data.choices[0].message.content;
+}
+
+module.exports = { generateQuizAndFlashcards, generateFromNotes, askQuestion };
