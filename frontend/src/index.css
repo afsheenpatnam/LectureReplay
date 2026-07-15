@@ -1,0 +1,9 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply text-slate-200;
+  background: radial-gradient(circle at 20% 20%, #0b1a3a 0%, #020617 55%), #020617;
+  min-height: 100vh;
+}
