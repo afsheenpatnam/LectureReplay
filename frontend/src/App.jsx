@@ -4,7 +4,7 @@ import SplashPage from './pages/SplashPage';
 import UploadPage from './pages/UploadPage';
 import LecturePage from './pages/LecturePage';
 
-const SPLASH_DURATION = 2200;
+const SPLASH_DURATION = 5000;
 
 function App() {
   const [showSplash, setShowSplash] = useState(true);
