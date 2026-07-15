@@ -25,4 +25,6 @@ export const listLectures = () => api.get('/lectures').then((res) => res.data);
 export const askAboutLecture = (id, question) =>
   api.post(`/lectures/${id}/ask`, { question }).then((res) => res.data);
 
+export const deleteLecture = (id) => api.delete(`/lectures/${id}`).then((res) => res.data);
+
 export default api;

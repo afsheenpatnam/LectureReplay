@@ -75,23 +75,71 @@ function TopicBreakdown({ chapters }) {
   );
 }
 
-function RevisionNotes({ notes, chapters }) {
+function RevisionNotes({ notes, chapters, title }) {
   if (!notes?.length) return null;
   return (
     <div>
-      <TopicBreakdown chapters={chapters} />
-      <div className="space-y-6">
-        {notes.map((section, i) => (
-          <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-800 hover:shadow-md hover:shadow-blue-950/40 transition-all">
-            <h3 className="font-semibold text-blue-400 mb-2">📌 {section.heading}</h3>
-            <ul className="list-disc list-inside space-y-1 text-sm text-slate-300">
-              {section.bullets.map((b, bi) => (
-                <li key={bi}>{b}</li>
-              ))}
-            </ul>
-          </div>
-        ))}
+      <div className="flex justify-end mb-4 print:hidden">
+        <button
+          type="button"
+          onClick={() => window.print()}
+          className="rounded-full bg-slate-800 hover:bg-slate-700 px-4 py-2 text-xs font-semibold text-slate-300 transition"
+        >
+          🖨️ Print / Save as PDF
+        </button>
       </div>
+      <div id="printable-revision-notes">
+        <h2 className="hidden print:block text-2xl font-bold mb-4">{title}</h2>
+        <TopicBreakdown chapters={chapters} />
+        <div className="space-y-6">
+          {notes.map((section, i) => (
+            <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-800 hover:shadow-md hover:shadow-blue-950/40 transition-all print:border-slate-300 print:bg-white print:text-black">
+              <h3 className="font-semibold text-blue-400 mb-2 print:text-black">📌 {section.heading}</h3>
+              <ul className="list-disc list-inside space-y-1 text-sm text-slate-300 print:text-black">
+                {section.bullets.map((b, bi) => (
+                  <li key={bi}>{b}</li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Confetti() {
+  const pieces = Array.from({ length: 40 });
+  const colors = ['#3b82f6', '#22d3ee', '#a855f7', '#34d399', '#f59e0b'];
+  return (
+    <div className="fixed inset-0 pointer-events-none z-50 overflow-hidden">
+      {pieces.map((_, i) => {
+        const left = Math.random() * 100;
+        const delay = Math.random() * 0.4;
+        const duration = 2 + Math.random() * 1.5;
+        const color = colors[i % colors.length];
+        const size = 6 + Math.random() * 6;
+        return (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              top: '-10px',
+              left: `${left}%`,
+              width: size,
+              height: size * 0.4,
+              background: color,
+              animation: `confetti-fall ${duration}s ease-in ${delay}s forwards`,
+              borderRadius: 2,
+            }}
+          />
+        );
+      })}
+      <style>{`
+        @keyframes confetti-fall {
+          to { transform: translateY(105vh) rotate(540deg); opacity: 0.3; }
+        }
+      `}</style>
     </div>
   );
 }
@@ -106,9 +154,11 @@ function Quiz({ quiz }) {
     (acc, q, i) => acc + (answers[i] === q.correctIndex ? 1 : 0),
     0
   );
+  const celebrate = submitted && score / quiz.length >= 0.7;
 
   return (
     <div className="space-y-6">
+      {celebrate && <Confetti />}
       {quiz.map((q, i) => (
         <div key={i} className="rounded-2xl border border-slate-800 bg-slate-900 shadow-sm p-4 hover:border-blue-900 transition-all">
           <p className="font-semibold mb-3 text-slate-200">
@@ -214,25 +264,100 @@ function AskAI({ lectureId }) {
   );
 }
 
-function Flashcards({ flashcards }) {
+function shuffleArray(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function Flashcards({ flashcards, lectureId }) {
+  const storageKey = `known-flashcards-${lectureId}`;
+  const [order, setOrder] = useState(() => flashcards.map((_, i) => i));
   const [flipped, setFlipped] = useState({});
+  const [known, setKnown] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem(storageKey)) || {};
+    } catch {
+      return {};
+    }
+  });
+  const [hideKnown, setHideKnown] = useState(false);
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(known));
+  }, [known, storageKey]);
+
   if (!flashcards?.length) return null;
 
+  const knownCount = Object.values(known).filter(Boolean).length;
+  const visibleOrder = hideKnown ? order.filter((i) => !known[i]) : order;
+
+  const markKnown = (i, value) => setKnown((k) => ({ ...k, [i]: value }));
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {flashcards.map((c, i) => (
-        <button
-          key={i}
-          type="button"
-          onClick={() => setFlipped((f) => ({ ...f, [i]: !f[i] }))}
-          className="rounded-2xl border-2 border-slate-700 bg-slate-900 shadow-sm p-4 text-left min-h-[110px] hover:border-blue-500 hover:shadow-md transition"
-        >
-          <p className="text-xs uppercase tracking-wide font-bold text-cyan-400 mb-2">
-            {flipped[i] ? '✅ Answer' : '💡 Term'}
-          </p>
-          <p className="text-sm text-slate-200">{flipped[i] ? c.back : c.front}</p>
-        </button>
-      ))}
+    <div>
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <p className="text-sm text-slate-400">
+          ✅ <span className="font-semibold text-emerald-400">{knownCount}</span> / {flashcards.length} known
+        </p>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setHideKnown((h) => !h)}
+            className="rounded-full bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition"
+          >
+            {hideKnown ? '👁️ Show all' : '🙈 Hide known'}
+          </button>
+          <button
+            type="button"
+            onClick={() => setOrder((o) => shuffleArray(o))}
+            className="rounded-full bg-slate-800 hover:bg-slate-700 px-3 py-1.5 text-xs font-semibold text-slate-300 transition"
+          >
+            🔀 Shuffle
+          </button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {visibleOrder.map((i) => {
+          const c = flashcards[i];
+          return (
+            <div
+              key={i}
+              className={`rounded-2xl border-2 shadow-sm p-4 min-h-[130px] flex flex-col justify-between transition ${
+                known[i] ? 'border-emerald-800 bg-emerald-950/20' : 'border-slate-700 bg-slate-900 hover:border-blue-500 hover:shadow-md'
+              }`}
+            >
+              <button
+                type="button"
+                onClick={() => setFlipped((f) => ({ ...f, [i]: !f[i] }))}
+                className="text-left flex-1"
+              >
+                <p className="text-xs uppercase tracking-wide font-bold text-cyan-400 mb-2">
+                  {flipped[i] ? '✅ Answer' : '💡 Term'}
+                </p>
+                <p className="text-sm text-slate-200">{flipped[i] ? c.back : c.front}</p>
+              </button>
+              <div className="flex gap-2 mt-3 pt-3 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => markKnown(i, !known[i])}
+                  className={`text-xs font-semibold px-3 py-1 rounded-full transition ${
+                    known[i]
+                      ? 'bg-emerald-600 text-white'
+                      : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+                  }`}
+                >
+                  {known[i] ? '✓ Known' : 'Mark as known'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -285,12 +410,12 @@ export default function LecturePage() {
 
   return (
     <div className="max-w-3xl mx-auto mt-12 px-6 pb-16">
-      <Link to="/upload" className="text-blue-400 font-medium hover:underline text-sm">
+      <Link to="/upload" className="text-blue-400 font-medium hover:underline text-sm print:hidden">
         ← Upload another lecture
       </Link>
-      <h1 className="text-3xl font-bold mt-2 mb-6 text-blue-400">{lecture.title}</h1>
+      <h1 className="text-3xl font-bold mt-2 mb-6 text-blue-400 print:hidden">{lecture.title}</h1>
 
-      <div className="flex gap-2 mb-6 flex-wrap">
+      <div className="flex gap-2 mb-6 flex-wrap print:hidden">
         {[
           ['timeline', '🕒 Timeline'],
           ['revision', '📖 Revision Notes'],
@@ -315,10 +440,10 @@ export default function LecturePage() {
 
       {tab === 'timeline' && <Timeline chapters={lecture.chapters} />}
       {tab === 'revision' && (
-        <RevisionNotes notes={lecture.revisionNotes} chapters={lecture.chapters} />
+        <RevisionNotes notes={lecture.revisionNotes} chapters={lecture.chapters} title={lecture.title} />
       )}
       {tab === 'quiz' && <Quiz quiz={lecture.quiz} />}
-      {tab === 'flashcards' && <Flashcards flashcards={lecture.flashcards} />}
+      {tab === 'flashcards' && <Flashcards flashcards={lecture.flashcards} lectureId={lecture._id} />}
       {tab === 'ask' && <AskAI lectureId={lecture._id} />}
     </div>
   );

@@ -114,4 +114,10 @@ router.get('/:id', async (req, res) => {
   res.json(lecture);
 });
 
+router.delete('/:id', async (req, res) => {
+  const lecture = await Lecture.findByIdAndDelete(req.params.id);
+  if (!lecture) return res.status(404).json({ error: 'Lecture not found' });
+  res.json({ ok: true });
+});
+
 module.exports = router;

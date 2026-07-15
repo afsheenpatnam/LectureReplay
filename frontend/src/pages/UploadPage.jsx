@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { uploadLecture, uploadNotes, listLectures } from '../api';
+import { uploadLecture, uploadNotes, listLectures, deleteLecture } from '../api';
 
 const STATUS_DOT = {
   ready: 'bg-emerald-500',
@@ -15,6 +15,18 @@ function RecentLectures() {
       .then((data) => setLectures(data.slice(0, 5)))
       .catch(() => setLectures([]));
   }, []);
+
+  const handleDelete = async (e, id) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!confirm('Delete this lecture? This cannot be undone.')) return;
+    setLectures((ls) => ls.filter((l) => l._id !== id));
+    try {
+      await deleteLecture(id);
+    } catch {
+      // if delete failed server-side, no harm done leaving it out of the local list
+    }
+  };
 
   if (!lectures?.length) return null;
 
@@ -31,10 +43,17 @@ function RecentLectures() {
             <span className="text-slate-300 truncate group-hover:text-blue-300 transition">
               {l.sourceType === 'notes' ? '📝' : '🎙️'} {l.title}
             </span>
-            <span
-              className={`w-2 h-2 rounded-full shrink-0 ml-2 ${STATUS_DOT[l.status] || 'bg-amber-500'}`}
-              title={l.status}
-            />
+            <span className="flex items-center gap-2 shrink-0 ml-2">
+              <span className={`w-2 h-2 rounded-full ${STATUS_DOT[l.status] || 'bg-amber-500'}`} title={l.status} />
+              <button
+                type="button"
+                onClick={(e) => handleDelete(e, l._id)}
+                className="opacity-0 group-hover:opacity-100 text-slate-500 hover:text-rose-400 transition text-xs"
+                title="Delete"
+              >
+                ✕
+              </button>
+            </span>
           </Link>
         ))}
       </div>
