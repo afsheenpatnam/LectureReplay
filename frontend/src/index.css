@@ -3,8 +3,8 @@
 @tailwind utilities;
 
 body {
-  @apply text-slate-200 font-sans antialiased;
-  background: radial-gradient(circle at 20% 20%, #0b1a3a 0%, #020617 55%), #020617;
+  @apply text-stone-800 font-sans antialiased;
+  background: #faf6ee;
   min-height: 100vh;
 }
 
@@ -13,13 +13,13 @@ h1, h2, h3 {
 }
 
 ::selection {
-  @apply bg-blue-500/30 text-white;
+  @apply bg-amber-300/40 text-stone-900;
 }
 
 * {
-  scrollbar-color: #1e293b #020617;
+  scrollbar-color: #e7dfd0 #faf6ee;
 }
 ::-webkit-scrollbar { width: 10px; height: 10px; }
-::-webkit-scrollbar-track { background: #020617; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 9999px; }
-::-webkit-scrollbar-thumb:hover { background: #334155; }
+::-webkit-scrollbar-track { background: #faf6ee; }
+::-webkit-scrollbar-thumb { background: #e7dfd0; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #d6cbb4; }
